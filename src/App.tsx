@@ -72,7 +72,6 @@ export default function ChatPage() {
       <main className="flex-1 px-20 overflow-y-auto">
         {/* Left message */}
         <div className="flex items-start space-x-3 max-w-lg">
-          <div className="w-10 h-10 rounded-full bg-white flex-shrink-0"></div>
           <div
             className="rounded-lg p-3 text-sm max-w-[70%]"
             style={{ backgroundColor: "#1a1a1a" }}
@@ -82,14 +81,13 @@ export default function ChatPage() {
         </div>
 
         {/* Right message */}
-        <div className="flex items-start space-x-3 max-w-lg ml-auto">
+        <div className="flex justify-end items-start space-x-3 w-full">
           <div
             className="rounded-lg p-3 text-sm max-w-[70%] text-right"
             style={{ backgroundColor: "#1a1a1a" }}
           >
             Lorem Ipsum Is Simply Dummy Text Of The Printing And Typesetting
-            Industry. Lorem Ipsum Is Simply Dummy Text Of The Printing And
-            Typesetting Industry.
+            Industry.
           </div>
         </div>
       </main>
