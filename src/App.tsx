@@ -1,10 +1,20 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IoDocumentAttachOutline } from "react-icons/io5";
 import { LuSendHorizontal } from "react-icons/lu";
 import { RiVoiceprintLine } from "react-icons/ri";
 import { FaRegTrashCan } from "react-icons/fa6";
 
 export default function ChatPage() {
+  type MessageType = {
+    id: number;
+    from: "user" | "ai";
+    text?: string;
+    pdfFile?: File; // remover o string
+    audioBlob?: Blob; // remover o string
+    timestamp: Date;
+  };
+
+  const [messages, setMessages] = useState<MessageType[]>([]);
   const [activeTab, setActiveTab] = useState("treinamento");
   const [message, setMessage] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -12,6 +22,134 @@ export default function ChatPage() {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
+  const messagess: MessageType[] = [
+    {
+      id: 1,
+      from: "ai",
+      text: "Olá, eu sou o agente IA. Como posso ajudar?",
+      timestamp: new Date(),
+    },
+    {
+      id: 2,
+      from: "user",
+      text: "Oi! Gostaria de saber como funciona o chat.",
+      timestamp: new Date(),
+    },
+    {
+      id: 3,
+      from: "ai",
+      text: "Claro! Você pode me fazer perguntas ou enviar arquivos para análise.",
+      timestamp: new Date(),
+    },
+    {
+      id: 4,
+      from: "user",
+      text: "Posso enviar PDFs aqui?",
+      timestamp: new Date(),
+    },
+    {
+      id: 5,
+      from: "ai",
+      text: "Sim, você pode enviar PDFs e eu analisarei o conteúdo para você.",
+      timestamp: new Date(),
+    },
+    {
+      id: 6,
+      from: "user",
+      text: "E se eu quiser ouvir a resposta em áudio?",
+      timestamp: new Date(),
+    },
+    {
+      id: 7,
+      from: "ai",
+      text: "Eu também consigo gerar respostas em áudio. Basta pedir!",
+      timestamp: new Date(),
+    },
+    {
+      id: 8,
+      from: "user",
+      text: "Muito bom! Isso vai me ajudar bastante nos estudos.",
+      timestamp: new Date(),
+    },
+    {
+      id: 9,
+      from: "ai",
+      text: "Fico feliz em ajudar. Quer fazer um teste agora?",
+      timestamp: new Date(),
+    },
+    {
+      id: 10,
+      from: "user",
+      text: "Sim, me envie uma pergunta de múltipla escolha sobre história.",
+      timestamp: new Date(),
+    },
+    {
+      id: 11,
+      from: "ai",
+      text: "Claro! Qual foi o ano da Proclamação da República no Brasil?",
+      timestamp: new Date(),
+    },
+    {
+      id: 12,
+      from: "user",
+      text: "1889.",
+      timestamp: new Date(),
+    },
+    {
+      id: 13,
+      from: "ai",
+      text: "Correto! Você está indo muito bem.",
+      timestamp: new Date(),
+    },
+    {
+      id: 14,
+      from: "user",
+      text: "Você pode me enviar outra pergunta?",
+      timestamp: new Date(),
+    },
+    {
+      id: 15,
+      from: "ai",
+      text: "Qual era o nome do imperador do Brasil antes da república?",
+      timestamp: new Date(),
+    },
+    {
+      id: 16,
+      from: "user",
+      text: "Dom Pedro II.",
+      timestamp: new Date(),
+    },
+    {
+      id: 17,
+      from: "ai",
+      text: "Perfeito! Suas respostas estão excelentes.",
+      timestamp: new Date(),
+    },
+    {
+      id: 18,
+      from: "user",
+      text: "Obrigado! Isso está sendo muito útil.",
+      timestamp: new Date(),
+    },
+    {
+      id: 19,
+      from: "ai",
+      text: "De nada! Me avise quando quiser continuar.",
+      timestamp: new Date(),
+    },
+    {
+      id: 20,
+      from: "user",
+      text: "Pode deixar, até logo!",
+      timestamp: new Date(),
+    },
+  ];
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // 📨 Envia a mensagem, PDF ou áudio
   const handleSend = () => {
@@ -24,6 +162,18 @@ export default function ChatPage() {
     } else {
       console.warn("Nada para enviar");
     }
+
+    const newMsg: MessageType = {
+      id: Date.now(), // id simples baseado no timestamp
+      from: "user",
+      text: message || undefined,
+      pdfFile: pdfFile || undefined,
+      audioBlob: audioBlob || undefined,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, newMsg]);
+
     setMessage("");
     setPdfFile(null);
     setAudioBlob(null);
@@ -75,7 +225,7 @@ export default function ChatPage() {
 
   return (
     <div
-      className="text-white flex flex-col min-h-screen min-w-screen overflow-hidden"
+      className="text-white flex flex-col h-screen min-w-screen"
       style={{ backgroundColor: "#000000" }}
     >
       {/* Header */}
@@ -135,27 +285,37 @@ export default function ChatPage() {
       </div>
 
       {/* Chat area */}
-      <main className="flex-1 px-20 overflow-y-auto">
-        {/* Left message */}
-        <div className="flex items-start space-x-3 max-w-lg">
+      <main className="flex-1 px-20 overflow-y-auto flex flex-col gap-4 w-full no-scrollbar">
+        {messagess.map((msg) => (
           <div
-            className="rounded-lg p-3 text-sm max-w-[70%]"
-            style={{ backgroundColor: "#1a1a1a" }}
+            key={msg.id}
+            className={`flex items-start space-x-3 w-full ${
+              msg.from === "user" ? "justify-end" : "justify-start"
+            }`}
           >
-            Olá eu sou xxx para prosseguirmos eu preciso de informação X Y e Z
-          </div>
-        </div>
+            <div
+              className="rounded-lg p-3 text-sm max-w-[70%] text-white"
+              style={{
+                backgroundColor: msg.from === "user" ? "#1a1a1a" : "#333333",
+                textAlign: msg.from === "user" ? "right" : "left",
+              }}
+            >
+              {msg.text && <p>{msg.text}</p>}
 
-        {/* Right message */}
-        <div className="flex justify-end items-start space-x-3 w-full">
-          <div
-            className="rounded-lg p-3 text-sm max-w-[70%] text-right"
-            style={{ backgroundColor: "#1a1a1a" }}
-          >
-            Lorem Ipsum Is Simply Dummy Text Of The Printing And Typesetting
-            Industry.
+              {msg.pdfFile && (
+                <div className="flex items-center gap-2">
+                  <IoDocumentAttachOutline size={20} />
+                  <span>{msg.pdfFile.name}</span>
+                </div>
+              )}
+
+              {msg.audioBlob && (
+                <audio controls src={URL.createObjectURL(msg.audioBlob)} />
+              )}
+            </div>
           </div>
-        </div>
+        ))}
+        <div ref={chatEndRef} />
       </main>
 
       {/* Input area */}
