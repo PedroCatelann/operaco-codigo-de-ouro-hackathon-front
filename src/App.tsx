@@ -1,15 +1,81 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { IoDocumentAttachOutline } from "react-icons/io5";
 import { LuSendHorizontal } from "react-icons/lu";
 import { RiVoiceprintLine } from "react-icons/ri";
+import { FaRegTrashCan } from "react-icons/fa6";
 
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState("treinamento");
   const [message, setMessage] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  // 📨 Envia a mensagem, PDF ou áudio
+  const handleSend = () => {
+    if (message) {
+      console.log("Enviando mensagem:", message);
+    } else if (pdfFile) {
+      console.log("Enviando PDF:", pdfFile.name);
+    } else if (audioBlob) {
+      console.log("Enviando áudio:", audioBlob);
+    } else {
+      console.warn("Nada para enviar");
+    }
+    setMessage("");
+    setPdfFile(null);
+    setAudioBlob(null);
+  };
+
+  // 📎 Captura PDF
+  const handleAttach = (e: any) => {
+    const file = e.target.files[0];
+    if (file && file.type === "application/pdf") {
+      setPdfFile(file);
+      setMessage("");
+      setAudioBlob(null);
+    } else {
+      alert("Por favor selecione um arquivo PDF.");
+    }
+  };
+
+  // 🎤 Inicia/para gravação de áudio
+  const handleVoice = async () => {
+    if (isRecording) {
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      chunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        chunksRef.current.push(e.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+        setAudioBlob(audioBlob);
+        setMessage("");
+        setPdfFile(null);
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Erro ao acessar o microfone:", err);
+    }
+  };
 
   return (
     <div
-      className="text-white flex flex-col min-h-screen min-w-screen"
+      className="text-white flex flex-col min-h-screen min-w-screen overflow-hidden"
       style={{ backgroundColor: "#000000" }}
     >
       {/* Header */}
@@ -98,16 +164,63 @@ export default function ChatPage() {
           className="flex flex-col relative w-full rounded-md"
           style={{ backgroundColor: "#1a1a1a" }}
         >
+          {/* === ÁREA DE EXIBIÇÃO DE ARQUIVO ÁUDIO OU PDF (acima do input) === */}
+          {(pdfFile || audioBlob) && (
+            <div className="flex gap-4 px-4 py-2 rounded-md max-w-lg">
+              {pdfFile && (
+                <>
+                  <div className="flex gap-2 items-center border px-4 py-2 rounded-2xl">
+                    <IoDocumentAttachOutline size={24} />
+                    <span className="flex">{pdfFile.name}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setPdfFile(null)}
+                    className="text-white hover:text-gray-400"
+                    aria-label="Excluir PDF"
+                    title="Excluir PDF"
+                  >
+                    <FaRegTrashCan size={20} />
+                  </button>
+                </>
+              )}
+              {audioBlob && (
+                <>
+                  <div className="flex gap-2 items-center border px-4 py-2 rounded-2xl">
+                    <RiVoiceprintLine size={24} />
+                    <span className="flex">
+                      {`Áudio gravado: ${Math.round(audioBlob.size / 1024)} KB`}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={() => setAudioBlob(null)}
+                    className="text-white hover:text-gray-400"
+                    aria-label="Excluir áudio"
+                    title="Excluir áudio"
+                  >
+                    <FaRegTrashCan size={20} />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
           <div className="flex items-center w-full">
             <input
               type="text"
               placeholder="Type message"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="flex-1 py-6 px-4 text-white placeholder-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setMessage(e.target.value);
+                setPdfFile(null);
+                setAudioBlob(null);
+              }}
+              className="flex-1 py-6 px-4 text-white placeholder-white rounded-md focus:outline-none"
+              disabled={!!pdfFile || !!audioBlob}
             />
             <button
-              type="submit"
+              type="button"
+              onClick={handleSend}
               className="ml-3 mr-6 text-white flex items-center justify-center border-none shadow-none"
             >
               <LuSendHorizontal size={22} />
@@ -116,12 +229,47 @@ export default function ChatPage() {
 
           <hr className="border-gray-400 my-2 mx-4" />
           <div className="flex items-center justify-between gap-2 px-4 py-2">
-            <button className="flex items-center gap-1 text-white hover:text-gray-400 border px-4 py-2 rounded-2xl">
-              <IoDocumentAttachOutline size={22} /> Attach
-            </button>
-            <button className="flex items-center gap-1 text-white hover:text-gray-400 border px-4 py-2 rounded-2xl">
-              <RiVoiceprintLine size={22} /> Voice
-            </button>
+            {/* Attach PDF */}
+            <div className="relative group">
+              <label className="flex items-center gap-1 text-white hover:text-gray-400 border px-4 py-2 rounded-2xl cursor-pointer">
+                <IoDocumentAttachOutline size={22} /> Attach
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleAttach}
+                  className="hidden"
+                  disabled={!!pdfFile || !!audioBlob}
+                />
+              </label>
+              {/* Tooltip */}
+              {(pdfFile || audioBlob) && (
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {pdfFile
+                    ? "Envie ou exclua o PDF antes de anexar um novo"
+                    : "Envie ou exclua o áudio antes de anexar um PDF"}
+                </div>
+              )}
+            </div>
+
+            {/* Voice */}
+            <div className="relative group">
+              <button
+                onClick={handleVoice}
+                className="flex items-center gap-1 text-white hover:text-gray-400 border px-4 py-2 rounded-2xl"
+                disabled={!!pdfFile || !!audioBlob}
+              >
+                <RiVoiceprintLine size={22} />{" "}
+                {isRecording ? "Gravando..." : "Voice"}
+              </button>
+              {/* Tooltip */}
+              {(pdfFile || audioBlob) && (
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                  {pdfFile
+                    ? "Envie ou exclua o PDF antes de gravar um áudio"
+                    : "Envie ou exclua o áudio antes de gravar um novo"}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </footer>
