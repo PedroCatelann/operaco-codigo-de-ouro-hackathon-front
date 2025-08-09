@@ -29,15 +29,9 @@ class ChatStore {
 
     this.ws = new WebSocket("ws://localhost:3002"); // troque para ngrok se necessário
 
-    this.ws.onopen = () => {
-      console.log("✅ Conectado ao WebSocket");
-    };
-
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("📩 Mensagem recebida via WS:", data);
-
         this.addMessage({
           id: Date.now(),
           from: data.from === "ai" ? "ai" : "user", // segurança
@@ -74,12 +68,11 @@ class ChatStore {
     const formData = new FormData();
     formData.append("agent", selectedAgent);
     formData.append("email", userEmail);
-    console.log(message);
     if (message.text) formData.append("message", message.text);
     if (message.pdfFile) formData.append("pdfFile", message.pdfFile);
-    if (message.audioBlob)
+    if (message.audioBlob) {
       formData.append("audioBlob", message.audioBlob, "audio.webm");
-    console.log(formData);
+    }
     try {
       await fetch("http://localhost:3001/send-to-agent", {
         method: "POST",
@@ -88,6 +81,10 @@ class ChatStore {
     } catch (error) {
       console.error("Erro ao enviar mensagem para backend:", error);
     }
+  }
+
+  get getMessages() {
+    return this.messages;
   }
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { IoDocumentAttachOutline } from "react-icons/io5";
 import { LuSendHorizontal } from "react-icons/lu";
 import { RiVoiceprintLine } from "react-icons/ri";
@@ -8,7 +8,48 @@ import { chatStore } from "./store/ChatStore";
 import type { MessageType } from "./store/ChatStore";
 import EmailModal from "./components/EmailModal";
 
-const ChatPage = observer(() => {
+const AudioPlayer = ({ blob }: { blob: Blob }) => {
+  const audioUrl = useMemo(() => URL.createObjectURL(blob), [blob]);
+  return <audio controls src={audioUrl} />;
+};
+
+const MemoizedMessages = React.memo(({ messages }: { messages: any[] }) => {
+  return (
+    <>
+      {messages.map((msg) => (
+        <div
+          key={msg.id}
+          className={`flex ${
+            msg.sender === "user" ? "justify-end" : "justify-start"
+          }`}
+        >
+          <div
+            className={`rounded-lg p-3 max-w-xs ${
+              msg.sender === "user"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-black"
+            }`}
+          >
+            {msg.text && <p className="whitespace-pre-line">{msg.text}</p>}
+            {msg.pdfFile && (
+              <a
+                href={URL.createObjectURL(msg.pdfFile)}
+                download="document.pdf"
+                className="underline text-sm"
+              >
+                Baixar PDF
+              </a>
+            )}
+            {msg.audioBlob && <AudioPlayer blob={msg.audioBlob} />}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+});
+MemoizedMessages.displayName = "MemoizedMessages";
+
+const ChatPage: React.FC = observer(() => {
   const [activeTab, setActiveTab] = useState<"interview" | "profile">(
     "interview"
   );
@@ -21,24 +62,20 @@ const ChatPage = observer(() => {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const { messages } = chatStore;
+  const messages = chatStore.messages;
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Rola para baixo apenas quando o número de mensagens aumenta
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    scrollToBottom();
+  }, [messages.length]);
 
   // 📨 Envia a mensagem, PDF ou áudio
   const handleSend = () => {
-    if (message) {
-      console.log("Enviando mensagem:", message);
-    } else if (pdfFile) {
-      console.log("Enviando PDF:", pdfFile.name);
-    } else if (audioBlob) {
-      console.log("Enviando áudio:", audioBlob);
-    } else {
-      console.warn("Nada para enviar");
-    }
-
     const newMsg: MessageType = {
       id: Date.now(),
       from: "user",
@@ -54,6 +91,7 @@ const ChatPage = observer(() => {
     setMessage("");
     setPdfFile(null);
     setAudioBlob(null);
+    scrollToBottom();
   };
 
   // 📎 Captura PDF
@@ -118,7 +156,7 @@ const ChatPage = observer(() => {
       )}
       {/* ⬅ modal aparece só sem email */}
       {/* Header */}
-      <header className="sm:invisible flex items-center justify-between p-4 shadow-lg shadow-gray-500/50">
+      <header className="flex items-center justify-between p-4 shadow-lg shadow-gray-500/50">
         <div className="flex items-center space-x-2">
           <svg
             className="w-6 h-6 text-white"
@@ -196,9 +234,7 @@ const ChatPage = observer(() => {
                 </div>
               )}
 
-              {msg.audioBlob && (
-                <audio controls src={URL.createObjectURL(msg.audioBlob)} />
-              )}
+              {msg.audioBlob && <AudioPlayer blob={msg.audioBlob} />}
             </div>
           </div>
         ))}
@@ -261,6 +297,7 @@ const ChatPage = observer(() => {
                 setPdfFile(null);
                 setAudioBlob(null);
               }}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
               className="flex-1 py-6 px-4 text-white placeholder-white rounded-md focus:outline-none"
               disabled={!!pdfFile || !!audioBlob}
             />
