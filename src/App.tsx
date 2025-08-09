@@ -3,19 +3,15 @@ import { IoDocumentAttachOutline } from "react-icons/io5";
 import { LuSendHorizontal } from "react-icons/lu";
 import { RiVoiceprintLine } from "react-icons/ri";
 import { FaRegTrashCan } from "react-icons/fa6";
+import { observer } from "mobx-react-lite";
+import { chatStore } from "./store/ChatStore";
+import type { MessageType } from "./store/ChatStore";
+import EmailModal from "./components/EmailModal";
 
-export default function ChatPage() {
-  type MessageType = {
-    id: number;
-    from: "user" | "ai";
-    text?: string;
-    pdfFile?: File; // remover o string
-    audioBlob?: Blob; // remover o string
-    timestamp: Date;
-  };
-
-  const [messages, setMessages] = useState<MessageType[]>([]);
-  const [activeTab, setActiveTab] = useState("treinamento");
+const ChatPage = observer(() => {
+  const [activeTab, setActiveTab] = useState<"interview" | "profile">(
+    "interview"
+  );
   const [message, setMessage] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -23,129 +19,9 @@ export default function ChatPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const messagess: MessageType[] = [
-    {
-      id: 1,
-      from: "ai",
-      text: "Olá, eu sou o agente IA. Como posso ajudar?",
-      timestamp: new Date(),
-    },
-    {
-      id: 2,
-      from: "user",
-      text: "Oi! Gostaria de saber como funciona o chat.",
-      timestamp: new Date(),
-    },
-    {
-      id: 3,
-      from: "ai",
-      text: "Claro! Você pode me fazer perguntas ou enviar arquivos para análise.",
-      timestamp: new Date(),
-    },
-    {
-      id: 4,
-      from: "user",
-      text: "Posso enviar PDFs aqui?",
-      timestamp: new Date(),
-    },
-    {
-      id: 5,
-      from: "ai",
-      text: "Sim, você pode enviar PDFs e eu analisarei o conteúdo para você.",
-      timestamp: new Date(),
-    },
-    {
-      id: 6,
-      from: "user",
-      text: "E se eu quiser ouvir a resposta em áudio?",
-      timestamp: new Date(),
-    },
-    {
-      id: 7,
-      from: "ai",
-      text: "Eu também consigo gerar respostas em áudio. Basta pedir!",
-      timestamp: new Date(),
-    },
-    {
-      id: 8,
-      from: "user",
-      text: "Muito bom! Isso vai me ajudar bastante nos estudos.",
-      timestamp: new Date(),
-    },
-    {
-      id: 9,
-      from: "ai",
-      text: "Fico feliz em ajudar. Quer fazer um teste agora?",
-      timestamp: new Date(),
-    },
-    {
-      id: 10,
-      from: "user",
-      text: "Sim, me envie uma pergunta de múltipla escolha sobre história.",
-      timestamp: new Date(),
-    },
-    {
-      id: 11,
-      from: "ai",
-      text: "Claro! Qual foi o ano da Proclamação da República no Brasil?",
-      timestamp: new Date(),
-    },
-    {
-      id: 12,
-      from: "user",
-      text: "1889.",
-      timestamp: new Date(),
-    },
-    {
-      id: 13,
-      from: "ai",
-      text: "Correto! Você está indo muito bem.",
-      timestamp: new Date(),
-    },
-    {
-      id: 14,
-      from: "user",
-      text: "Você pode me enviar outra pergunta?",
-      timestamp: new Date(),
-    },
-    {
-      id: 15,
-      from: "ai",
-      text: "Qual era o nome do imperador do Brasil antes da república?",
-      timestamp: new Date(),
-    },
-    {
-      id: 16,
-      from: "user",
-      text: "Dom Pedro II.",
-      timestamp: new Date(),
-    },
-    {
-      id: 17,
-      from: "ai",
-      text: "Perfeito! Suas respostas estão excelentes.",
-      timestamp: new Date(),
-    },
-    {
-      id: 18,
-      from: "user",
-      text: "Obrigado! Isso está sendo muito útil.",
-      timestamp: new Date(),
-    },
-    {
-      id: 19,
-      from: "ai",
-      text: "De nada! Me avise quando quiser continuar.",
-      timestamp: new Date(),
-    },
-    {
-      id: 20,
-      from: "user",
-      text: "Pode deixar, até logo!",
-      timestamp: new Date(),
-    },
-  ];
+  const { messages } = chatStore;
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -164,7 +40,7 @@ export default function ChatPage() {
     }
 
     const newMsg: MessageType = {
-      id: Date.now(), // id simples baseado no timestamp
+      id: Date.now(),
       from: "user",
       text: message || undefined,
       pdfFile: pdfFile || undefined,
@@ -172,7 +48,8 @@ export default function ChatPage() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, newMsg]);
+    // Usa o MobX para armazenar e enviar para o backend
+    chatStore.sendMessageToBackend(newMsg, activeTab, userEmail || "");
 
     setMessage("");
     setPdfFile(null);
@@ -196,6 +73,9 @@ export default function ChatPage() {
     if (isRecording) {
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.stop();
+        mediaRecorderRef.current.stream
+          .getTracks()
+          .forEach((track) => track.stop());
       }
       setIsRecording(false);
       return;
@@ -228,8 +108,17 @@ export default function ChatPage() {
       className="text-white flex flex-col h-screen min-w-screen"
       style={{ backgroundColor: "#000000" }}
     >
+      {!userEmail && (
+        <EmailModal
+          onSave={(e) => {
+            setUserEmail(e);
+            chatStore.setUserEmail(e); // 🔹 importante para abrir o WebSocket
+          }}
+        />
+      )}
+      {/* ⬅ modal aparece só sem email */}
       {/* Header */}
-      <header className="flex items-center justify-between p-4 shadow-lg shadow-gray-500/50">
+      <header className="sm:invisible flex items-center justify-between p-4 shadow-lg shadow-gray-500/50">
         <div className="flex items-center space-x-2">
           <svg
             className="w-6 h-6 text-white"
@@ -259,13 +148,12 @@ export default function ChatPage() {
           <button className="ml-1 text-white text-xl">▾</button>
         </div>
       </header>
-
       {/* Toggle buttons */}
-      <div className="flex justify-center space-x-4 py-6 px-4">
+      <div className="flex flex-col sm:flex-row justify-center gap-3 sm:space-x-4 py-4 sm:py-6 px-4">
         <button
-          onClick={() => setActiveTab("treinamento")}
+          onClick={() => setActiveTab("interview")}
           className={`px-6 py-2 rounded-full border border-gray-500 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "treinamento"
+            activeTab === "interview"
               ? "bg-gray-700 text-white"
               : "text-gray-400 hover:bg-gray-700 hover:text-white"
           }`}
@@ -273,9 +161,9 @@ export default function ChatPage() {
           Treinamento Para Entrevistas
         </button>
         <button
-          onClick={() => setActiveTab("otimizador")}
+          onClick={() => setActiveTab("profile")}
           className={`px-6 py-2 rounded-full border border-gray-500 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "otimizador"
+            activeTab === "profile"
               ? "bg-gray-700 text-white"
               : "text-gray-400 hover:bg-gray-700 hover:text-white"
           }`}
@@ -283,10 +171,9 @@ export default function ChatPage() {
           Otimizador De Perfil
         </button>
       </div>
-
       {/* Chat area */}
-      <main className="flex-1 px-20 overflow-y-auto flex flex-col gap-4 w-full no-scrollbar">
-        {messagess.map((msg) => (
+      <main className="flex-1 px-4 sm:px-10 lg:px-20 overflow-y-auto flex flex-col gap-4 w-full no-scrollbar">
+        {messages.map((msg) => (
           <div
             key={msg.id}
             className={`flex items-start space-x-3 w-full ${
@@ -300,7 +187,7 @@ export default function ChatPage() {
                 textAlign: msg.from === "user" ? "right" : "left",
               }}
             >
-              {msg.text && <p>{msg.text}</p>}
+              {msg.text && <p className="whitespace-pre-line">{msg.text}</p>}
 
               {msg.pdfFile && (
                 <div className="flex items-center gap-2">
@@ -317,9 +204,8 @@ export default function ChatPage() {
         ))}
         <div ref={chatEndRef} />
       </main>
-
       {/* Input area */}
-      <footer className="px-20 py-12 flex items-center space-x-3">
+      <footer className="px-4 sm:px-10 lg:px-20 py-4 sm:py-8 lg:py-12 flex flex-col sm:flex-row items-center sm:space-x-3 gap-3 sm:gap-0">
         <div
           className="flex flex-col relative w-full rounded-md"
           style={{ backgroundColor: "#1a1a1a" }}
@@ -382,6 +268,7 @@ export default function ChatPage() {
               type="button"
               onClick={handleSend}
               className="ml-3 mr-6 text-white flex items-center justify-center border-none shadow-none"
+              disabled={message === "" && !pdfFile && !audioBlob}
             >
               <LuSendHorizontal size={22} />
             </button>
@@ -435,4 +322,6 @@ export default function ChatPage() {
       </footer>
     </div>
   );
-}
+});
+
+export default ChatPage;
