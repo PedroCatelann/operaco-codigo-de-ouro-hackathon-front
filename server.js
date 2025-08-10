@@ -13,8 +13,11 @@ app.use(cors());
 
 let wsClients = [];
 
-// WebSocket
-const wss = new WebSocketServer({ port: 3002 });
+// Criar servidor HTTP
+const server = http.createServer(app);
+
+// Criar WebSocket no mesmo servidor
+const wss = new WebSocketServer({ server });
 wss.on("connection", (ws) => {
   console.log("Frontend conectado via WS");
   wsClients.push(ws);

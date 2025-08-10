@@ -29,7 +29,7 @@ class ChatStore {
   connectWebSocket() {
     if (this.ws) return; // evita duplicar conexões
 
-    this.ws = new WebSocket("ws://localhost:3002"); // troque para ngrok se necessário
+    this.ws = new WebSocket("wss://237da3f93ec5.ngrok-free.app"); // troque para ngrok se necessário
 
     this.ws.onmessage = (event) => {
       try {
