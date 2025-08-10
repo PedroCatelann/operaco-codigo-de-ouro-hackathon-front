@@ -4,16 +4,15 @@ import fetch from "node-fetch";
 import cors from "cors";
 import { WebSocketServer } from "ws";
 import FormData from "form-data";
+import http from "http"; // IMPORTANTE
 
 const app = express();
-const upload = multer(); // processa multipart/form-data
-
-// Middleware global apenas para JSON puro (se precisar em outros endpoints)
+const upload = multer();
 app.use(cors());
 
 let wsClients = [];
 
-// Criar servidor HTTP
+// Criar servidor HTTP unificado
 const server = http.createServer(app);
 
 // Criar WebSocket no mesmo servidor
@@ -37,53 +36,34 @@ app.post("/send-to-agent", upload.any(), async (req, res) => {
         ? `https://webhook.operacaocodigodeouro.com.br/webhook/interview_expert?email=${email}`
         : `https://webhook.operacaocodigodeouro.com.br/webhook/profile_generator?email=${email}`;
 
-    // Headers base
     const headers = {
       Authorization: "Bearer OP_HACKATHON_2025",
       targetHost: "https://237da3f93ec5.ngrok-free.app/callback",
     };
 
-    console.log(endpoint)
-
     let body;
 
     if (file) {
-      // É um arquivo → enviar como multipart/form-data
       const isAudio = file.fieldname === "audioBlob";
       const isPdf = file.fieldname === "pdfFile";
 
-      if (isAudio) {
-        headers.fileType = "audio";
-      } else if (isPdf) {
-        headers.fileType = "pdf";
-      } else {
-        return res.status(400).json({ error: "Tipo de arquivo não suportado" });
-      }
+      if (isAudio) headers.fileType = "audio";
+      else if (isPdf) headers.fileType = "pdf";
+      else return res.status(400).json({ error: "Tipo de arquivo não suportado" });
 
       const formData = new FormData();
-      // Aqui usamos file.buffer direto, sem Blob
       formData.append("file", file.buffer, file.originalname);
-
-      // Mescla headers do FormData com os nossos
       Object.assign(headers, formData.getHeaders());
-
       body = formData;
 
     } else if (message) {
-      // É texto → enviar JSON
       headers["Content-Type"] = "application/json";
       body = JSON.stringify({ message: { text: message } });
     } else {
       return res.status(400).json({ error: "Nenhuma mensagem ou arquivo enviado" });
     }
 
-    // Envia para o endpoint
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers,
-      body,
-    });
-
+    const response = await fetch(endpoint, { method: "POST", headers, body });
     const data = await response.json();
     res.json(data);
 
@@ -94,7 +74,7 @@ app.post("/send-to-agent", upload.any(), async (req, res) => {
 });
 
 // Callback da IA
-app.use(express.json()); // aqui sim para JSON puro
+app.use(express.json());
 app.post("/callback", (req, res) => {
   console.log("Recebi callback da IA:", req.body);
   wsClients.forEach(ws => {
@@ -103,6 +83,7 @@ app.post("/callback", (req, res) => {
   res.status(200).send("OK");
 });
 
-app.listen(3001, () => {
-  console.log("Servidor HTTP rodando na porta 3001");
+// Inicia o servidor HTTP + WS
+server.listen(3001, () => {
+  console.log("Servidor HTTP+WS rodando na porta 3001");
 });
