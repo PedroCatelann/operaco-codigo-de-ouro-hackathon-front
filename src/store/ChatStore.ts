@@ -86,7 +86,7 @@ class ChatStore {
       this.loading = true;
     });
     try {
-      await fetch("http://localhost:3001/send-to-agent", {
+      await fetch("https://237da3f93ec5.ngrok-free.app/send-to-agent", {
         method: "POST",
         body: formData,
       });
