@@ -299,7 +299,7 @@ const ChatPage: React.FC = observer(() => {
               }}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               className="flex-1 py-6 px-4 text-white placeholder-white rounded-md focus:outline-none"
-              disabled={!!pdfFile || !!audioBlob}
+              disabled={!!pdfFile || !!audioBlob || chatStore.loading}
             />
             <button
               type="button"
@@ -322,7 +322,7 @@ const ChatPage: React.FC = observer(() => {
                   accept="application/pdf"
                   onChange={handleAttach}
                   className="hidden"
-                  disabled={!!pdfFile || !!audioBlob}
+                  disabled={!!pdfFile || !!audioBlob || chatStore.loading}
                 />
               </label>
               {/* Tooltip */}
@@ -340,7 +340,7 @@ const ChatPage: React.FC = observer(() => {
               <button
                 onClick={handleVoice}
                 className="flex items-center gap-1 text-white hover:text-gray-400 border px-4 py-2 rounded-2xl"
-                disabled={!!pdfFile || !!audioBlob}
+                disabled={!!pdfFile || !!audioBlob || chatStore.loading}
               >
                 <RiVoiceprintLine size={22} />{" "}
                 {isRecording ? "Gravando..." : "Voice"}

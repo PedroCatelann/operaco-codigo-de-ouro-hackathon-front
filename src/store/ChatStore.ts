@@ -1,5 +1,5 @@
 // src/store/ChatStore.ts
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, runInAction } from "mobx";
 
 export interface MessageType {
   id: number;
@@ -8,12 +8,14 @@ export interface MessageType {
   pdfFile?: File;
   audioBlob?: Blob;
   timestamp: Date;
+  placeholder?: boolean;
 }
 
 class ChatStore {
   messages: MessageType[] = [];
   ws: WebSocket | null = null;
   userEmail: string = "";
+  loading: boolean = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -32,12 +34,19 @@ class ChatStore {
     this.ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        this.addMessage({
-          id: Date.now(),
-          from: data.from === "ai" ? "ai" : "user", // segurança
-          text: data.text,
-          timestamp: new Date(),
-        });
+        const idx = this.messages.findIndex((msg) => msg.placeholder === true);
+        if (idx !== -1) {
+          runInAction(() => {
+            this.messages[idx] = {
+              id: Date.now(),
+              from: data.from === "ai" ? "ai" : "user", // segurança
+              text: data.text,
+              placeholder: false,
+              timestamp: new Date(),
+            };
+            this.loading = false;
+          });
+        }
       } catch (error) {
         console.error("Erro ao processar mensagem WS:", error);
       }
@@ -73,6 +82,9 @@ class ChatStore {
     if (message.audioBlob) {
       formData.append("audioBlob", message.audioBlob, "audio.webm");
     }
+    runInAction(() => {
+      this.loading = true;
+    });
     try {
       await fetch("http://localhost:3001/send-to-agent", {
         method: "POST",
@@ -81,6 +93,13 @@ class ChatStore {
     } catch (error) {
       console.error("Erro ao enviar mensagem para backend:", error);
     }
+    this.addMessage({
+      id: Date.now(),
+      from: "ai", // segurança
+      text: "...",
+      placeholder: true,
+      timestamp: new Date(),
+    });
   }
 
   get getMessages() {

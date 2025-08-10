@@ -37,7 +37,7 @@ app.post("/send-to-agent", upload.any(), async (req, res) => {
     // Headers base
     const headers = {
       Authorization: "Bearer OP_HACKATHON_2025",
-      targetHost: "https://0f6ede52a88a.ngrok-free.app/callback",
+      targetHost: "https://237da3f93ec5.ngrok-free.app/callback",
     };
 
     console.log(endpoint)
