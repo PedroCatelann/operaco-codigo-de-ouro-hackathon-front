@@ -10,7 +10,7 @@ import EmailModal from "./components/EmailModal";
 
 const AudioPlayer = ({ blob }: { blob: Blob }) => {
   const audioUrl = useMemo(() => URL.createObjectURL(blob), [blob]);
-  return <audio controls src={audioUrl} />;
+  return <audio controls src={audioUrl} style={{ maxWidth: "100%" }} />;
 };
 
 const MemoizedMessages = React.memo(({ messages }: { messages: any[] }) => {
@@ -210,11 +210,11 @@ const ChatPage: React.FC = observer(() => {
         </button>
       </div>
       {/* Chat area */}
-      <main className="flex-1 px-4 sm:px-10 lg:px-20 overflow-y-auto flex flex-col gap-4 w-full no-scrollbar">
+      <main className="flex-1 px-4 sm:px-10 lg:px-20 overflow-y-auto flex flex-col gap-4 w-full no-scrollbar ">
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex items-start space-x-3 w-full ${
+            className={`flex items-start space-x-3 w-full text-7xl ${
               msg.from === "user" ? "justify-end" : "justify-start"
             }`}
           >
@@ -320,7 +320,10 @@ const ChatPage: React.FC = observer(() => {
                 <input
                   type="file"
                   accept="application/pdf"
-                  onChange={handleAttach}
+                  onChange={(e) => {
+                    handleAttach(e);
+                    e.target.value = ""; // permite selecionar o mesmo arquivo novamente
+                  }}
                   className="hidden"
                   disabled={!!pdfFile || !!audioBlob || chatStore.loading}
                 />
