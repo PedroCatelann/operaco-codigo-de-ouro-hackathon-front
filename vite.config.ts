@@ -2,7 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-const NGROK_HOST = "c1c79a0382f6.ngrok-free.app";
+//const NGROK_HOST = "c1c79a0382f6.ngrok-free.app";
 
 // https://vite.dev/config/
 export default defineConfig({
