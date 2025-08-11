@@ -4,8 +4,10 @@ import fetch from "node-fetch";
 import cors from "cors";
 import { WebSocketServer } from "ws";
 import FormData from "form-data";
-import http from "http"; // IMPORTANTE
+import http from "http";
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
 const upload = multer();
 app.use(cors());
@@ -28,6 +30,7 @@ wss.on("connection", (ws) => {
 // Rota que recebe FormData
 app.post("/send-to-agent", upload.any(), async (req, res) => {
   try {
+    console.log("chegou aq")
     const { message, agent, email } = req.body;
     const file = req.files?.[0] || null;
 
@@ -35,10 +38,10 @@ app.post("/send-to-agent", upload.any(), async (req, res) => {
       agent === "interview"
         ? `https://webhook.operacaocodigodeouro.com.br/webhook/interview_expert?email=${email}`
         : `https://webhook.operacaocodigodeouro.com.br/webhook/profile_generator?email=${email}`;
-
+    console.log(process.env.VITE_URL_NGROK)
     const headers = {
       Authorization: "Bearer OP_HACKATHON_2025",
-      targetHost: "https://237da3f93ec5.ngrok-free.app/callback",
+      targetHost: `https://${process.env.VITE_URL_NGROK}/callback`,
     };
 
     let body;
