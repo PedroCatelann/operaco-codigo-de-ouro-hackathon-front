@@ -39,6 +39,7 @@ app.post("/send-to-agent", upload.any(), async (req, res) => {
         ? `https://webhook.operacaocodigodeouro.com.br/webhook/interview_expert?email=${email}`
         : `https://webhook.operacaocodigodeouro.com.br/webhook/profile_generator?email=${email}`;
     console.log(process.env.VITE_URL_NGROK)
+    console.log(endpoint)
     const headers = {
       Authorization: "Bearer OP_HACKATHON_2025",
       targetHost: `https://${process.env.VITE_URL_NGROK}/callback`,
