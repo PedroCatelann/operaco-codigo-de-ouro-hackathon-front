@@ -7,6 +7,9 @@ import { observer } from "mobx-react-lite";
 import { chatStore } from "./store/ChatStore";
 import type { MessageType } from "./store/ChatStore";
 import EmailModal from "./components/EmailModal";
+import logo from "./assets/Logo.svg";
+import "./App.css";
+import { LoadingDots } from "./components/LoadingDots";
 
 const AudioPlayer = ({ blob }: { blob: Blob }) => {
   const audioUrl = useMemo(() => URL.createObjectURL(blob), [blob]);
@@ -101,6 +104,10 @@ const ChatPage: React.FC = observer(() => {
       setPdfFile(file);
       setMessage("");
       setAudioBlob(null);
+    } else if (file.type === "audio/mpeg") {
+      setPdfFile(null);
+      setMessage("");
+      setAudioBlob(file);
     } else {
       alert("Por favor selecione um arquivo PDF.");
     }
@@ -156,33 +163,16 @@ const ChatPage: React.FC = observer(() => {
       )}
       {/* ⬅ modal aparece só sem email */}
       {/* Header */}
-      <header className="flex items-center justify-between p-4 shadow-lg shadow-gray-500/50">
+      <header
+        className="flex items-center justify-between p-4"
+        style={{ boxShadow: "0 5px 30px -10px rgba(235,219,47,0.5)" }}
+      >
         <div className="flex items-center space-x-2">
-          <svg
-            className="w-6 h-6 text-white"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 14l9-5-9-5-9 5 9 5z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 14l6.16-3.422a12.083 12.083 0 01.84 4.393v3.246l-7 3-7-3v-3.246a12.083 12.083 0 01.84-4.393L12 14z"
-            />
-          </svg>
-          <h2 className="text-xl">
-            Operação <span className="font-bold">Código de ouro</span>
-          </h2>
+          <img src={logo} alt="Logo" className="" />
         </div>
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-          <span className="whitespace-nowrap">Aline Moraes</span>
+          <span className="whitespace-nowrap"></span>
           <button className="ml-1 text-white text-xl">▾</button>
         </div>
       </header>
@@ -192,7 +182,7 @@ const ChatPage: React.FC = observer(() => {
           onClick={() => setActiveTab("interview")}
           className={`px-6 py-2 rounded-full border border-gray-500 text-sm font-medium transition-colors duration-200 ${
             activeTab === "interview"
-              ? "bg-gray-700 text-white"
+              ? "border-yellow-500 text-yellow-500"
               : "text-gray-400 hover:bg-gray-700 hover:text-white"
           }`}
         >
@@ -202,7 +192,7 @@ const ChatPage: React.FC = observer(() => {
           onClick={() => setActiveTab("profile")}
           className={`px-6 py-2 rounded-full border border-gray-500 text-sm font-medium transition-colors duration-200 ${
             activeTab === "profile"
-              ? "bg-gray-700 text-white"
+              ? "border-yellow-500 text-yellow-500"
               : "text-gray-400 hover:bg-gray-700 hover:text-white"
           }`}
         >
@@ -222,10 +212,16 @@ const ChatPage: React.FC = observer(() => {
               className="rounded-lg p-3 text-sm max-w-[70%] text-white"
               style={{
                 backgroundColor: msg.from === "user" ? "#1a1a1a" : "#333333",
-                textAlign: msg.from === "user" ? "right" : "left",
+                textAlign: "left",
               }}
             >
-              {msg.text && <p className="whitespace-pre-line">{msg.text}</p>}
+              {msg.text === "..." ? (
+                <p className="whitespace-pre-line h-[15px] min-w-[20px] text-2xl flex items-center justify-center">
+                  <LoadingDots />
+                </p>
+              ) : (
+                <p className="whitespace-pre-line">{msg.text}</p>
+              )}
 
               {msg.pdfFile && (
                 <div className="flex items-center gap-2">
@@ -319,7 +315,7 @@ const ChatPage: React.FC = observer(() => {
                 <IoDocumentAttachOutline size={22} /> Attach
                 <input
                   type="file"
-                  accept="application/pdf"
+                  accept="application/pdf, .mp3"
                   onChange={(e) => {
                     handleAttach(e);
                     e.target.value = ""; // permite selecionar o mesmo arquivo novamente

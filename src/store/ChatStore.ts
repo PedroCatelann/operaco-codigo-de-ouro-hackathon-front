@@ -16,6 +16,7 @@ class ChatStore {
   ws: WebSocket | null = null;
   userEmail: string = "";
   loading: boolean = false;
+  isSendFile: boolean = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -73,6 +74,16 @@ class ChatStore {
     userEmail: string
   ) {
     this.addMessage(message);
+    runInAction(() => {
+      this.loading = true;
+      this.addMessage({
+        id: Date.now(),
+        from: "ai", // segurança
+        text: "...",
+        placeholder: true,
+        timestamp: new Date(),
+      });
+    });
 
     const formData = new FormData();
     formData.append("agent", selectedAgent);
@@ -82,9 +93,6 @@ class ChatStore {
     if (message.audioBlob) {
       formData.append("audioBlob", message.audioBlob, "audio.webm");
     }
-    runInAction(() => {
-      this.loading = true;
-    });
     try {
       await fetch(`https://${import.meta.env.VITE_URL_NGROK}/send-to-agent`, {
         method: "POST",
@@ -93,13 +101,6 @@ class ChatStore {
     } catch (error) {
       console.error("Erro ao enviar mensagem para backend:", error);
     }
-    this.addMessage({
-      id: Date.now(),
-      from: "ai", // segurança
-      text: "...",
-      placeholder: true,
-      timestamp: new Date(),
-    });
   }
 
   get getMessages() {
