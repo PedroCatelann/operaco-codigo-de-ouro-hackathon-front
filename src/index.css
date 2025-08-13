@@ -27,18 +27,6 @@
   --header-shadow: 0 5px 30px -10px rgba(235,219,47,0.5);
 }
 
-/* Shadow do header aplicado no body */
-body::before {
-  content: '';
-  position: fixed;
-  top: 50;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,193,7,0.3), transparent);
-  z-index: 1000;
-  pointer-events: none;
-}
 
 /* Shadow específico para tema escuro */
 [data-theme="dark"] body::before {
