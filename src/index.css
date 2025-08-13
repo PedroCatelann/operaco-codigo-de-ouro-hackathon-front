@@ -12,7 +12,40 @@
 
 :root {
   font-family: 'Sansation', sans-serif;
+  
+  /* Variáveis CSS para tema escuro (padrão) */
+  --bg-primary: #000000;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #333333;
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+  --border-color: #4b5563;
+  --accent-color: #ebdb2f;
+  --accent-hover: #d4c726;
+  --shadow-color: rgba(0,0,0,0.5);
+  --header-shadow: 0 5px 30px -10px rgba(235,219,47,0.5);
 }
+
+/* Shadow do header aplicado no body */
+body::before {
+  content: '';
+  position: fixed;
+  top: 50;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,193,7,0.3), transparent);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Shadow específico para tema escuro */
+[data-theme="dark"] body::before {
+  background: linear-gradient(90deg, transparent, rgba(235,219,47,0.5), transparent);
+}
+
+
 
 html, body {
   height: 100%;
@@ -21,5 +54,59 @@ html, body {
 
 button {
   cursor: pointer;
+}
+
+/* Navigation buttons styles */
+.header-navigation {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 1rem 1.5rem 1rem;
+  align-items: center;
+  background-color: var(--bg-secondary);
+  transition: background-color 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .header-navigation {
+    flex-direction: row;
+    gap: 1rem;
+    padding: 1rem 1rem 1.5rem 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header-navigation {
+    padding: 1rem 2.5rem 1.5rem 2.5rem;
+  }
+}
+
+.nav-button {
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  border: 1px solid;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+.nav-button.active {
+  border-color: var(--accent-color);
+  color: #000000;
+  background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+}
+
+.nav-button:not(.active) {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.nav-button:not(.active):hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 

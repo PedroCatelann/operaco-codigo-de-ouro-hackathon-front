@@ -7,13 +7,25 @@ import { observer } from "mobx-react-lite";
 import { chatStore } from "./store/ChatStore";
 import type { MessageType } from "./store/ChatStore";
 import EmailModal from "./components/EmailModal";
-import logo from "./assets/Logo.svg";
-import "./App.css";
+
 import { LoadingDots } from "./components/LoadingDots";
+import Header from "./components/Header";
+import { useTheme } from "./contexts/ThemeContext";
 
 const AudioPlayer = ({ blob }: { blob: Blob }) => {
+  const { theme } = useTheme();
   const audioUrl = useMemo(() => URL.createObjectURL(blob), [blob]);
-  return <audio controls src={audioUrl} style={{ maxWidth: "100%" }} />;
+  return (
+    <div 
+      className="p-2 rounded-full transition-colors duration-200"
+      style={{ 
+        backgroundColor: theme === 'light' ? 'var(--bg-secondary)' : 'transparent',
+        border: theme === 'light' ? '1px solid var(--border-color)' : 'none'
+      }}
+    >
+      <audio controls src={audioUrl} style={{ maxWidth: "100%" }} />
+    </div>
+  );
 };
 
 const MemoizedMessages = React.memo(({ messages }: { messages: any[] }) => {
@@ -27,11 +39,11 @@ const MemoizedMessages = React.memo(({ messages }: { messages: any[] }) => {
           }`}
         >
           <div
-            className={`rounded-lg p-3 max-w-xs ${
-              msg.sender === "user"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-200 text-black"
-            }`}
+            className={`rounded-lg p-3 max-w-xs transition-colors duration-200`}
+            style={{
+              backgroundColor: msg.sender === "user" ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+              color: msg.sender === "user" ? 'var(--text-primary)' : 'var(--text-primary)'
+            }}
           >
             {msg.text && <p className="whitespace-pre-line">{msg.text}</p>}
             {msg.pdfFile && (
@@ -53,6 +65,7 @@ const MemoizedMessages = React.memo(({ messages }: { messages: any[] }) => {
 MemoizedMessages.displayName = "MemoizedMessages";
 
 const ChatPage: React.FC = observer(() => {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<"interview" | "profile">(
     "interview"
   );
@@ -150,8 +163,11 @@ const ChatPage: React.FC = observer(() => {
 
   return (
     <div
-      className="text-white flex flex-col h-screen min-w-screen"
-      style={{ backgroundColor: "#000000" }}
+      className="flex flex-col h-screen min-w-screen transition-colors duration-300"
+      style={{ 
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)'
+      }}
     >
       {!userEmail && (
         <EmailModal
@@ -163,44 +179,29 @@ const ChatPage: React.FC = observer(() => {
       )}
       {/* ⬅ modal aparece só sem email */}
       {/* Header */}
-      <header
-        className="flex items-center justify-between p-4"
-        style={{ boxShadow: "0 5px 30px -10px rgba(235,219,47,0.5)" }}
-      >
-        <div className="flex items-center space-x-2">
-          <img src={logo} alt="Logo" className="" />
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-          <span className="whitespace-nowrap"></span>
-          <button className="ml-1 text-white text-xl">▾</button>
-        </div>
-      </header>
-      {/* Toggle buttons */}
-      <div className="flex flex-col sm:flex-row justify-center gap-3 sm:space-x-4 py-4 sm:py-6 px-4">
+      <Header />
+      
+      {/* Navigation buttons */}
+      <div className="header-navigation">
         <button
           onClick={() => setActiveTab("interview")}
-          className={`px-6 py-2 rounded-full border border-gray-500 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "interview"
-              ? "border-yellow-500 text-yellow-500"
-              : "text-gray-400 hover:bg-gray-700 hover:text-white"
-          }`}
+          className={`nav-button ${activeTab === "interview" ? "active" : ""}`}
         >
           Treinamento Para Entrevistas
         </button>
         <button
           onClick={() => setActiveTab("profile")}
-          className={`px-6 py-2 rounded-full border border-gray-500 text-sm font-medium transition-colors duration-200 ${
-            activeTab === "profile"
-              ? "border-yellow-500 text-yellow-500"
-              : "text-gray-400 hover:bg-gray-700 hover:text-white"
-          }`}
+          className={`nav-button ${activeTab === "profile" ? "active" : ""}`}
         >
           Otimizador De Perfil
         </button>
       </div>
+      
       {/* Chat area */}
-      <main className="flex-1 px-4 sm:px-10 lg:px-20 overflow-y-auto flex flex-col gap-4 w-full no-scrollbar ">
+      <main 
+        className="flex-1 px-4 sm:px-10 lg:px-20 overflow-y-auto flex flex-col gap-4 w-full no-scrollbar transition-colors duration-300"
+        style={{ backgroundColor: 'var(--bg-secondary)' }}
+      >
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -209,10 +210,13 @@ const ChatPage: React.FC = observer(() => {
             }`}
           >
             <div
-              className="rounded-lg p-3 text-sm max-w-[70%] text-white"
+              className="rounded-lg p-3 text-sm max-w-[70%] transition-colors duration-200"
               style={{
-                backgroundColor: msg.from === "user" ? "#1a1a1a" : "#333333",
+                backgroundColor: msg.text ? 'var(--bg-tertiary)' : 'transparent',
+                color: 'var(--text-primary)',
                 textAlign: "left",
+                border: msg.text && theme === 'light' ? '1px solid var(--border-color)' : 'none',
+                boxShadow: msg.text ? '0 4px 12px var(--shadow-color)' : 'none',
               }}
             >
               {msg.text === "..." ? (
@@ -237,10 +241,18 @@ const ChatPage: React.FC = observer(() => {
         <div ref={chatEndRef} />
       </main>
       {/* Input area */}
-      <footer className="px-4 sm:px-10 lg:px-20 py-4 sm:py-8 lg:py-12 flex flex-col sm:flex-row items-center sm:space-x-3 gap-3 sm:gap-0">
+      <footer 
+        className="px-4 sm:px-10 lg:px-20 py-4 sm:py-8 lg:py-12 flex flex-col sm:flex-row items-center sm:space-x-3 gap-3 sm:gap-0 transition-colors duration-300"
+        style={{ 
+          backgroundColor: 'var(--bg-secondary)'
+        }}
+      >
         <div
-          className="flex flex-col relative w-full rounded-md"
-          style={{ backgroundColor: "#1a1a1a" }}
+          className="flex flex-col relative w-full rounded-md transition-colors duration-200"
+          style={{ 
+            backgroundColor: 'var(--bg-tertiary)',
+            boxShadow: '0 4px 12px var(--shadow-color)'
+          }}
         >
           {/* === ÁREA DE EXIBIÇÃO DE ARQUIVO ÁUDIO OU PDF (acima do input) === */}
           {(pdfFile || audioBlob) && (
@@ -254,7 +266,8 @@ const ChatPage: React.FC = observer(() => {
 
                   <button
                     onClick={() => setPdfFile(null)}
-                    className="text-white hover:text-gray-400"
+                    className="transition-colors duration-200"
+                    style={{ color: 'var(--text-primary)' }}
                     aria-label="Excluir PDF"
                     title="Excluir PDF"
                   >
@@ -264,7 +277,13 @@ const ChatPage: React.FC = observer(() => {
               )}
               {audioBlob && (
                 <>
-                  <div className="flex gap-2 items-center border px-4 py-2 rounded-2xl">
+                  <div 
+                    className="flex gap-2 items-center px-4 py-2 rounded-2xl transition-colors duration-200"
+                    style={{ 
+                      border: '1px solid #000000',
+                      backgroundColor: 'var(--bg-secondary)'
+                    }}
+                  >
                     <RiVoiceprintLine size={24} />
                     <span className="flex">
                       {`Áudio gravado: ${Math.round(audioBlob.size / 1024)} KB`}
@@ -273,7 +292,8 @@ const ChatPage: React.FC = observer(() => {
 
                   <button
                     onClick={() => setAudioBlob(null)}
-                    className="text-white hover:text-gray-400"
+                    className="transition-colors duration-200"
+                    style={{ color: 'var(--text-primary)' }}
                     aria-label="Excluir áudio"
                     title="Excluir áudio"
                   >
@@ -286,7 +306,6 @@ const ChatPage: React.FC = observer(() => {
           <div className="flex items-center w-full">
             <input
               type="text"
-              placeholder="Type message"
               value={message}
               onChange={(e) => {
                 setMessage(e.target.value);
@@ -294,25 +313,38 @@ const ChatPage: React.FC = observer(() => {
                 setAudioBlob(null);
               }}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              className="flex-1 py-6 px-4 text-white placeholder-white rounded-md focus:outline-none"
+              className="flex-1 py-6 px-4 rounded-md focus:outline-none transition-colors duration-200"
+              style={{
+                color: 'var(--text-primary)',
+                backgroundColor: 'var(--bg-tertiary)'
+              }}
+              placeholder="Type message"
               disabled={!!pdfFile || !!audioBlob || chatStore.loading}
             />
             <button
               type="button"
               onClick={handleSend}
-              className="ml-3 mr-6 text-white flex items-center justify-center border-none shadow-none"
+              className="ml-3 mr-6 flex items-center justify-center border-none shadow-none transition-colors duration-200"
+              style={{ 
+                color: 'var(--text-primary)'
+              }}
               disabled={message === "" && !pdfFile && !audioBlob}
             >
               <LuSendHorizontal size={22} />
             </button>
           </div>
 
-          <hr className="border-gray-400 my-2 mx-4" />
+          <hr className="my-2 mx-4" style={{ borderColor: 'var(--border-color)' }} />
           <div className="flex items-center justify-between gap-2 px-4 py-2">
             {/* Attach PDF */}
             <div className="relative group">
-              <label className="flex items-center gap-1 text-white hover:text-gray-400 border px-4 py-2 rounded-2xl cursor-pointer">
-                <IoDocumentAttachOutline size={22} /> Attach
+                          <label className="flex items-center gap-1 border px-4 py-2 rounded-2xl cursor-pointer transition-colors duration-200" style={{ 
+              color: 'var(--text-primary)', 
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'var(--bg-secondary)',
+              boxShadow: '0 2px 8px var(--shadow-color)'
+            }}>
+              <IoDocumentAttachOutline size={22} /> Attach
                 <input
                   type="file"
                   accept="application/pdf, .mp3"
@@ -326,7 +358,7 @@ const ChatPage: React.FC = observer(() => {
               </label>
               {/* Tooltip */}
               {(pdfFile || audioBlob) && (
-                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
                   {pdfFile
                     ? "Envie ou exclua o PDF antes de anexar um novo"
                     : "Envie ou exclua o áudio antes de anexar um PDF"}
@@ -338,7 +370,13 @@ const ChatPage: React.FC = observer(() => {
             <div className="relative group">
               <button
                 onClick={handleVoice}
-                className="flex items-center gap-1 text-white hover:text-gray-400 border px-4 py-2 rounded-2xl"
+                className="flex items-center gap-1 border px-4 py-2 rounded-2xl transition-colors duration-200"
+                style={{ 
+                  color: 'var(--text-primary)', 
+                  borderColor: 'var(--border-color)',
+                  backgroundColor: 'var(--bg-secondary)',
+                  boxShadow: '0 2px 8px var(--shadow-color)'
+                }}
                 disabled={!!pdfFile || !!audioBlob || chatStore.loading}
               >
                 <RiVoiceprintLine size={22} />{" "}
@@ -346,7 +384,7 @@ const ChatPage: React.FC = observer(() => {
               </button>
               {/* Tooltip */}
               {(pdfFile || audioBlob) && (
-                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
                   {pdfFile
                     ? "Envie ou exclua o PDF antes de gravar um áudio"
                     : "Envie ou exclua o áudio antes de gravar um novo"}
