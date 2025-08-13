@@ -1,0 +1,68 @@
+/* Header Component Styles */
+
+.header-container {
+  background-color: #5656568b;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.header-container::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(180deg, var(--accent-color) 0%, transparent 100%);
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo {
+  height: auto;
+  max-height: 40px;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary);
+}
+
+.user-name {
+  white-space: nowrap;
+}
+
+.user-menu-btn {
+  margin-left: 0.25rem;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  transition: color 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+ 
