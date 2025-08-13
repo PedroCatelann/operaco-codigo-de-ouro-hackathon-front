@@ -170,7 +170,7 @@ const ChatPage: React.FC = observer(() => {
 
   return (
     <div
-      className="h-lvh flex flex-col min-w-screen transition-colors duration-300"
+      className="h-dvh flex flex-col min-w-screen transition-colors duration-300"
       style={{
         backgroundColor: "var(--bg-primary)",
         color: "var(--text-primary)",
