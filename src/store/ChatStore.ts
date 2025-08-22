@@ -30,16 +30,13 @@ class ChatStore {
   }
 
   connectWebSocket() {
-    if (this.stompClient) return; // evita duplicar conexões
+    if (this.stompClient) return;
 
     this.stompClient = new Client({
-      brokerURL: `wss://${import.meta.env.VITE_URL_NGROK}/ws`, // WebSocket puro
-      debug: (str) => console.log("[STOMP]", str),
-      reconnectDelay: 3000, // tenta reconectar automaticamente
+      brokerURL: `wss://${import.meta.env.VITE_URL_NGROK}/ws`,
+      //debug: (str) => console.log("[STOMP]", str),
+      reconnectDelay: 3000,
       onConnect: () => {
-        console.log("Conectado ao WebSocket (STOMP puro)");
-
-        // Inscrever no tópico que o backend envia mensagens
         this.stompClient?.subscribe("/topic/ai", (message) => {
           try {
             const data = JSON.parse(message.body);
@@ -81,6 +78,9 @@ class ChatStore {
     userEmail: string
   ) {
     this.addMessage(message);
+
+    await this.delay(1000);
+
     runInAction(() => {
       this.loading = true;
       this.addMessage({
@@ -108,6 +108,10 @@ class ChatStore {
     } catch (error) {
       console.error("Erro ao enviar mensagem para backend:", error);
     }
+  }
+
+  delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   get getMessages() {

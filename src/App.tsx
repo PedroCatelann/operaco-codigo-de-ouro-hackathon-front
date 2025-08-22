@@ -99,7 +99,6 @@ const ChatPage: React.FC = observer(() => {
 
   // 📨 Envia a mensagem, PDF ou áudio
   const handleSend = () => {
-    console.log(Date.now());
     const newMsg: MessageType = {
       id: Date.now(),
       from: "user",
