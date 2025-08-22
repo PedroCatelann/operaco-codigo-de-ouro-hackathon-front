@@ -1,5 +1,6 @@
 // src/store/ChatStore.ts
 import { makeAutoObservable, runInAction } from "mobx";
+import { Client } from "@stomp/stompjs";
 
 export interface MessageType {
   id: number;
@@ -17,6 +18,7 @@ class ChatStore {
   userEmail: string = "";
   loading: boolean = false;
   isSendFile: boolean = false;
+  stompClient: Client | null = null;
 
   constructor() {
     makeAutoObservable(this);
@@ -28,40 +30,45 @@ class ChatStore {
   }
 
   connectWebSocket() {
-    if (this.ws) return; // evita duplicar conexões
+    if (this.stompClient) return; // evita duplicar conexões
 
-    this.ws = new WebSocket(`wss://${import.meta.env.VITE_URL_NGROK}`); // troque para ngrok se necessário
+    this.stompClient = new Client({
+      brokerURL: `wss://${import.meta.env.VITE_URL_NGROK}/ws`, // WebSocket puro
+      debug: (str) => console.log("[STOMP]", str),
+      reconnectDelay: 3000, // tenta reconectar automaticamente
+      onConnect: () => {
+        console.log("Conectado ao WebSocket (STOMP puro)");
 
-    this.ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        const idx = this.messages.findIndex((msg) => msg.placeholder === true);
-        if (idx !== -1) {
-          runInAction(() => {
-            this.messages[idx] = {
-              id: Date.now(),
-              from: data.from === "ai" ? "ai" : "user", // segurança
-              text: data.text,
-              placeholder: false,
-              timestamp: new Date(),
-            };
-            this.loading = false;
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao processar mensagem WS:", error);
-      }
-    };
+        // Inscrever no tópico que o backend envia mensagens
+        this.stompClient?.subscribe("/topic/ai", (message) => {
+          try {
+            const data = JSON.parse(message.body);
+            const idx = this.messages.findIndex(
+              (msg) => msg.placeholder === true
+            );
+            if (idx !== -1) {
+              runInAction(() => {
+                this.messages[idx] = {
+                  id: Date.now(),
+                  from: data.from === "ai" ? "ai" : "user",
+                  text: data.text,
+                  placeholder: false,
+                  timestamp: new Date(),
+                };
+                this.loading = false;
+              });
+            }
+          } catch (error) {
+            console.error("Erro ao processar mensagem STOMP:", error);
+          }
+        });
+      },
+      onStompError: (frame) => {
+        console.error("❌ Erro no STOMP:", frame);
+      },
+    });
 
-    this.ws.onerror = (err) => {
-      console.error("❌ Erro no WebSocket:", err);
-    };
-
-    this.ws.onclose = () => {
-      console.warn("⚠️ WebSocket fechado, tentando reconectar...");
-      this.ws = null;
-      setTimeout(() => this.connectWebSocket(), 3000); // reconexão
-    };
+    this.stompClient.activate();
   }
 
   addMessage(message: MessageType) {
